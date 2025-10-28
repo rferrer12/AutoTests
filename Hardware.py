@@ -12,7 +12,7 @@ AXIS_PORT = [Axes_List.AXIS_X.value, Axes_List.AXIS_Y.value]
 
 class XYStage:
     """
-    Definition of a 2-axis XY stage connected to a Zaber controller
+    Definition of a 2-axis XY stage connected to a Zaber controller 
 
     Attributes:
 
@@ -31,8 +31,10 @@ class XYStage:
                 "units": units,
                 "limits": limits
             }
-        print("Homing all axes of device with address {}.".format(device.device_address))
+        """
+        print(")Homing all axes of device with address {}.".format(device.device_address))
         self.device.all_axes.home()
+        """
 
     def _determine_relevant_stage_travel_limits(self, axis, units) -> tuple[float, float]:
         """
@@ -42,4 +44,6 @@ class XYStage:
         limit_min = axis.settings.get("limit.min", units)
         limit_max = axis.settings.get("limit.max", units)
         return limit_min, limit_max
+
+    def
 
