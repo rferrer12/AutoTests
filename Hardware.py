@@ -45,5 +45,3 @@ class XYStage:
         limit_max = axis.settings.get("limit.max", units)
         return limit_min, limit_max
 
-    def
-
