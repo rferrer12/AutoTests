@@ -9,8 +9,6 @@ import GUIWindows
 
 import sys
 
-#from .ui import MainWindow
-
 def main():
     # Re-generate ui.py, if UI modified in QT Designer
     """
