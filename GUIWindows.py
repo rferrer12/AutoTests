@@ -19,22 +19,24 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         super().__init__(*args, **kwargs)
         self.setupUi(self)
         self.setWindowTitle("Home Window")
-        test1_button = self.pushButton_3
-        test1_button.setCheckable(True)
-        test1_button.pressed.connect(self.open_test_window)
-        test2_button = self.pushButton_4
-        test2_button.setCheckable(True)
-        test2_button.pressed.connect(self.open_test_window)
-        test3_button = self.pushButton_5
-        test3_button.setCheckable(True)
-        test3_button.pressed.connect(self.open_test_window)
-        test4_button = self.pushButton_6
-        test4_button.setCheckable(True)
-        test4_button.pressed.connect(self.open_test_window)
+        self.pushButton.setCheckable(True)
+        self.pushButton.pressed.connect(self.home_all_axes())
+        self.pushButton_3.setCheckable(True)
+        self.pushButton_3.pressed.connect(lambda: self.open_test_window("Test 1"))
+        self.pushButton_4.setCheckable(True)
+        self.pushButton_4.pressed.connect(lambda: self.open_test_window("Test 2"))
+        self.pushButton_5.setCheckable(True)
+        self.pushButton_5.pressed.connect(lambda: self.open_test_window("Test 3"))
+        self.pushButton_6.setCheckable(True)
+        self.pushButton_6.pressed.connect(lambda: self.open_test_window("Test 4"))
         self.new_window = None
 
-    def open_test_window(self):
+    def home_all_axes(self):
+
+
+    def open_test_window(self, name):
         self.new_window = TestWindow()
+        self.new_window.setWindowTitle(name)
         self.new_window.show()
         self.close()
 
@@ -52,11 +54,6 @@ class TestWindow(QMainWindow, Ui_TestWindow):
         self.new_window = MainWindow()
         self.new_window.show()
         self.close()
-
-class Test1(TestWindow):
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.setWindowTitle("Test 1")
 
 class FreeWindow(QMainWindow):
     def __init__(self, *args, **kwargs):
