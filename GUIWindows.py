@@ -18,9 +18,19 @@ class MainWindow(QMainWindow, Ui_MainWindow):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.setupUi(self)
+        self.setWindowTitle("Home Window")
         test1_button = self.pushButton_3
         test1_button.setCheckable(True)
         test1_button.pressed.connect(self.open_test_window)
+        test2_button = self.pushButton_4
+        test2_button.setCheckable(True)
+        test2_button.pressed.connect(self.open_test_window)
+        test3_button = self.pushButton_5
+        test3_button.setCheckable(True)
+        test3_button.pressed.connect(self.open_test_window)
+        test4_button = self.pushButton_6
+        test4_button.setCheckable(True)
+        test4_button.pressed.connect(self.open_test_window)
         self.new_window = None
 
     def open_test_window(self):
@@ -30,7 +40,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
 
 
 class TestWindow(QMainWindow, Ui_TestWindow):
-    def __init__(self, name, *args, **kwargs):
+    def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.setupUi(self)
         home_button = self.pushButton
@@ -42,6 +52,11 @@ class TestWindow(QMainWindow, Ui_TestWindow):
         self.new_window = MainWindow()
         self.new_window.show()
         self.close()
+
+class Test1(TestWindow):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.setWindowTitle("Test 1")
 
 class FreeWindow(QMainWindow):
     def __init__(self, *args, **kwargs):
