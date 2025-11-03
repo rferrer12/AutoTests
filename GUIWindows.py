@@ -33,6 +33,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
 
     def home_all_axes(self):
 
+320.
 
     def open_test_window(self, name):
         self.new_window = TestWindow()
