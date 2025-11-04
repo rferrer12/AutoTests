@@ -1,5 +1,6 @@
+from PyQt6.uic.Compiler.misc import Literal
 from zaber_motion import Units, Library
-from zaber_motion.ascii import Connection, Axis, AxisType, device
+from zaber_motion.ascii import Connection, Axis, AxisType
 from enum import Enum
 import Constants
 
@@ -9,33 +10,41 @@ class Axes_List(Enum):
 
 AXIS_PORT = [Axes_List.AXIS_X.value, Axes_List.AXIS_Y.value]
 
+Library.enable_device_db_store()
+
 class XYStage:
     """
-    Definition of a 2-axis XY stage connected to a Zaber controller 
+    Definition of a 2-axis XY stage connected to a Zaber controller
 
     Attributes:
 
     """
 
     def __init__(self, connection_port: str):
-        self.connection = Connection.open_serial_port(connection_port)
-        self.device = self.connection.detect_devices()[0]
+        #self.connection = Connection.open_serial_port(connection_port)
+        self.connection = Connection.open_iot("59d035e6-756c-4f14-a242-8249ac1350d5")
+        self.device_list = self.connection.detect_devices()
+        print("Found {} devices".format(len(self.device_list)))
         self.axes = {}
-        for port in AXIS_PORT:
-            axis = self.device.get_axis(port)
-            units = Units.ANGLE_DEGREES if axis.axis_type is AxisType.ROTARY else Units.LENGTH_MILLIMETRES
-            limits = self._determine_relevant_stage_travel_limits(axis, units)
-            self.axes[port] = {
-                "axis": axis,
-                "units": units,
-                "limits": limits
-            }
+        for device in self.device_list:
+            for i in range(device.axis_count):
+                axis = device.get_axis(i+1)
+                if axis.axis_type is AxisType.ROTARY:
+                    units = Units.ANGLE_DEGREES
+                else:
+                    units = Units.LENGTH_MILLIMETRES
+                limits = self._determine_relevant_stage_travel_limits(axis, units)
+                self.axes[i] = {
+                    "axis": axis,
+                    "units": units,
+                    "limits": limits
+                }
         """
         print(")Homing all axes of device with address {}.".format(device.device_address))
         self.device.all_axes.home()
         """
 
-    def _determine_relevant_stage_travel_limits(self, axis: float, units: str) -> tuple[float, float]:
+    def _determine_relevant_stage_travel_limits(self, axis: Axis, units) -> tuple[float, float]:
         """
         Determine appropriate limits of stage travel to use as bounds for the slider.
 
@@ -44,19 +53,25 @@ class XYStage:
         limit_max = axis.settings.get("limit.max", units)
         return limit_min, limit_max
 
-    def move_to(self, abs_pos: dict, move_vel: float):
-        if isinstance(abs_pos, dict):
-            for i , pos in abs_pos.items():
-                if pos > self.axes[i]["limits"][1]:
-                    pos = self.axes[i]["limits"][1]
-                elif pos < self.axes[i]["limits"][0]:
-                    pos = self.axes[i]["limits"][0]
-                self.axes[i].move_absolute(pos, Units.LENGTH_MILLIMETRES, wait_until_idle=True, velocity = move_vel)
+    def move_to(self, abs_pos: list[float], move_vel: list[float]):
+        for i in self.axes:
+            if abs_pos[i] > self.axes[i]["limits"][1]:
+                pos = self.axes[i]["limits"][1]
+            elif abs_pos[i] < self.axes[i]["limits"][0]:
+                pos = self.axes[i]["limits"][0]
+            else:
+                pos = abs_pos[i]
+            axis = self.axes[i].get("axis")
+            print("Moving axis {} to position {}".format(axis, pos))
+            axis.move_relative(pos, unit = Units.LENGTH_MILLIMETRES, velocity = move_vel)
 
     def stop_move(self):
-        for i in self.axes.values():
+        for i in self.axes:
             self.axes[i].stop()
 
     def home_all_axes(self):
-        print("Homing all axes of device with address {}.".format(self.device.device_address))
+        for device in self.device_list:
+            print("Homing all axes of device with address {}.".format(device.device_address))
         self.connection.home_all()
+        for i in self.axes:
+            self.axes[i].get("axis").home()
