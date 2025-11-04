@@ -1,6 +1,7 @@
 from pathlib import Path
 import subprocess
 import time
+import Constants
 
 from PyQt6.QtWidgets import QApplication, QWidget, QMainWindow, QPushButton
 from PyQt6.QtCore import QThread, QEvent, Qt, pyqtSignal
@@ -20,20 +21,12 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.setupUi(self)
         self.setWindowTitle("Home Window")
         self.pushButton.setCheckable(True)
-        self.pushButton.pressed.connect(self.home_all_axes())
-        self.pushButton_3.setCheckable(True)
+        self.pushButton.pressed.connect(self.home_all_axes)
         self.pushButton_3.pressed.connect(lambda: self.open_test_window("Test 1"))
-        self.pushButton_4.setCheckable(True)
         self.pushButton_4.pressed.connect(lambda: self.open_test_window("Test 2"))
-        self.pushButton_5.setCheckable(True)
         self.pushButton_5.pressed.connect(lambda: self.open_test_window("Test 3"))
-        self.pushButton_6.setCheckable(True)
         self.pushButton_6.pressed.connect(lambda: self.open_test_window("Test 4"))
         self.new_window = None
-
-    def home_all_axes(self):
-
-320.
 
     def open_test_window(self, name):
         self.new_window = TestWindow()
@@ -41,6 +34,8 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.new_window.show()
         self.close()
 
+    def home_all_axes(self):
+        self.pushButton.hide()
 
 class TestWindow(QMainWindow, Ui_TestWindow):
     def __init__(self, *args, **kwargs):
