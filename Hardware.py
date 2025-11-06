@@ -19,10 +19,10 @@ class XYStage:
     Attributes:
 
     """
-
+    units = None
     def __init__(self, connection_port: str):
         #self.connection = Connection.open_serial_port(connection_port)
-        self.connection = Connection.open_iot("e5ccabf1-a74e-4aeb-81c8-7a650b6919d1")
+        self.connection = Connection.open_iot("65c2792d-bf67-4346-824b-83e731a65a25")
         self.device_list = self.connection.detect_devices()
         print("Found {} devices".format(len(self.device_list)))
         self.axes = {}
@@ -54,7 +54,7 @@ class XYStage:
         return limit_min, limit_max
 
     def move_to(self, abs_pos: list[float], move_vel: list[float]):
-        for i in self.axes:
+        for i in range(2):
             if abs_pos[i] > self.axes[i]["limits"][1]:
                 pos = self.axes[i]["limits"][1]
             elif abs_pos[i] < self.axes[i]["limits"][0]:
@@ -74,5 +74,3 @@ class XYStage:
         for device in self.device_list:
             print("Homing all axes of device with address {}.".format(device.device_address))
         self.connection.home_all()
-        for i in self.axes:
-            self.axes[i].get("axis").home()

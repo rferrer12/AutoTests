@@ -1,6 +1,7 @@
 from PyQt6.QtWidgets import QApplication, QWidget, QMainWindow, QDialog, QPushButton, QDialogButtonBox, QMessageBox
 from PyQt6.QtCore import QThread, QEvent, Qt, pyqtSignal
 from PyQt6 import uic
+from zaber_motion import Units
 
 import sys
 
@@ -22,10 +23,11 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.setWindowTitle("Home Window")
         self.pushButton.pressed.connect(self.home_all_axes)
         self.pushButton_2.pressed.connect(lambda: self.open_free_move("Free Move"))
-        self.pushButton_3.pressed.connect(lambda: controller.stage_stop())
+        self.pushButton_3.pressed.connect(lambda: self.open_free_move("Test 1"))
         self.pushButton_4.pressed.connect(lambda: self.open_test_window("Test 2"))
         self.pushButton_5.pressed.connect(lambda: self.open_test_window("Test 3"))
         self.pushButton_6.pressed.connect(lambda: self.open_test_window("Test 4"))
+        self.pushButton_7.pressed.connect(lambda: controller.stage_stop())
         self.new_window = None
 
     def home_all_axes(self):
@@ -38,10 +40,13 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             print("Home all axes rejected")
 
     def open_free_move(self, name):
-        self.new_window = FreeWindow()
-        self.new_window.setWindowTitle(name)
-        self.new_window.show()
-        self.close()
+        dlg = DialogWindow()
+        dlg.textBrowser.setText("Please ensure that the tool will not collide with the workpiece or other materials.")
+        if dlg.exec():
+            self.new_window = FreeWindow()
+            self.new_window.setWindowTitle(name)
+            self.new_window.show()
+            self.close()
 
     def open_test_window(self, name):
         self.new_window = TestWindow()
@@ -67,12 +72,26 @@ class FreeWindow(QMainWindow, Ui_FreeWindow):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.setupUi(self)
-        home_button = self.pushButton
+        home_button = self.homeButton
         home_button.setCheckable(True)
         home_button.pressed.connect(self.open_main_window)
         self.new_window = None
-        self.minPos_label.setText(str(controller.stage.axes[0]["limits"][0]))
-        self.maxPos_label.setText(str(controller.stage.axes[0]["limits"][1]))
+        self.minPos1Label.setText(str(controller.stage.axes[0]["limits"][0]))
+        self.maxPos1Label.setText(str(controller.stage.axes[0]["limits"][1]))
+        self.axis1Slider.setRange(controller.stage.axes[0]["limits"][0], controller.stage.axes[0]["limits"][1])
+        if len(controller.stage.axes) == 2:
+            self.minPos2Label.setText(str(controller.stage.axes[0]["limits"][0]))
+            self.maxPos2Label.setText(str(controller.stage.axes[0]["limits"][1]))
+            self.axis2Slider.setRange(controller.stage.axes[1]["limits"][0], controller.stage.axes[1]["limits"][1])
+        else:
+            self.minPos2Label.setText(str("NA"))
+            self.maxPos2Label.setText(str("NA"))
+            self.axis2Slider.setEnabled(False)
+            self.setPos2Button.setEnabled(False)
+            self.pos2lineEdit.setText(str("NA"))
+            self.pos2lineEdit.setEnabled(False)
+        self.axis1Slider.sliderReleased.connect(lambda: controller.stage_move_to([float(self.axis1Slider.value())], [0.0]))
+        self.axis1Slider.sliderMoved.connect(lambda: self.pos1lineEdit.setText(str(self.axis1Slider.value())))
 
     def open_main_window(self):
         self.new_window = MainWindow()

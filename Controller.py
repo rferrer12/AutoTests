@@ -4,7 +4,6 @@ from Hardware import XYStage
 
 
 class StageController(QObject):
-    position = pyqtSignal(float, float)
     status = pyqtSignal(str)
     busy_state = pyqtSignal(bool)
 
@@ -57,12 +56,13 @@ class MotionWorker(QObject):
         self.stage = stage
         self.command = command
         self.args = args
-        self._stop_requested = False
+        self.stop_requested = False
 
     def move_command(self):
         try:
             if self.command == "stage_move_to":
-                self._run_move_command(lambda: self.stage.move_to(100, 0))
+                self.stage.targetPos = pos
+                self._run_move_command(lambda: self.stage.move_to())
             elif self.command == "stage_home":
                 self._run_move_command(lambda: self.stage.home_all_axes())
         except Exception as e:
@@ -72,7 +72,7 @@ class MotionWorker(QObject):
 
     def _run_move_command(self, func):
         for axis in self.stage.axes:
-            if self._stop_requested:
+            if self.stop_requested:
                 self.stage.stop_move()
                 return
             func()
