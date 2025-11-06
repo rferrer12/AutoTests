@@ -22,7 +22,7 @@ class XYStage:
 
     def __init__(self, connection_port: str):
         #self.connection = Connection.open_serial_port(connection_port)
-        self.connection = Connection.open_iot("59d035e6-756c-4f14-a242-8249ac1350d5")
+        self.connection = Connection.open_iot("e5ccabf1-a74e-4aeb-81c8-7a650b6919d1")
         self.device_list = self.connection.detect_devices()
         print("Found {} devices".format(len(self.device_list)))
         self.axes = {}
@@ -63,11 +63,12 @@ class XYStage:
                 pos = abs_pos[i]
             axis = self.axes[i].get("axis")
             print("Moving axis {} to position {}".format(axis, pos))
-            axis.move_relative(pos, unit = Units.LENGTH_MILLIMETRES, velocity = move_vel)
+            axis.move_absolute(pos, unit = Units.LENGTH_MILLIMETRES, velocity = move_vel)
 
     def stop_move(self):
         for i in self.axes:
-            self.axes[i].stop()
+            axis = self.axes[i].get("axis")
+            axis.stop()
 
     def home_all_axes(self):
         for device in self.device_list:

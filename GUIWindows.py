@@ -1,4 +1,4 @@
-from PyQt6.QtWidgets import QApplication, QWidget, QMainWindow, QPushButton
+from PyQt6.QtWidgets import QApplication, QWidget, QMainWindow, QDialog, QPushButton, QDialogButtonBox, QMessageBox
 from PyQt6.QtCore import QThread, QEvent, Qt, pyqtSignal
 from PyQt6 import uic
 
@@ -22,16 +22,20 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.setWindowTitle("Home Window")
         self.pushButton.pressed.connect(self.home_all_axes)
         self.pushButton_2.pressed.connect(lambda: self.open_free_move("Free Move"))
-        self.pushButton_3.pressed.connect(lambda: self.open_test_window("Test 1"))
+        self.pushButton_3.pressed.connect(lambda: controller.stage_stop())
         self.pushButton_4.pressed.connect(lambda: self.open_test_window("Test 2"))
         self.pushButton_5.pressed.connect(lambda: self.open_test_window("Test 3"))
         self.pushButton_6.pressed.connect(lambda: self.open_test_window("Test 4"))
         self.new_window = None
 
     def home_all_axes(self):
-        controller.stage_home()
-        self.new_window = Ui_MainWindow()
-        self.new_window.setupUi(self)
+        dlg = DialogWindow()
+        dlg.textBrowser.setText("Please ensure that the tool will not collide with the workpiece or other materials.")
+        if dlg.exec():
+            controller.stage_home()
+            print("Home all axes accepted")
+        else:
+            print("Home all axes rejected")
 
     def open_free_move(self, name):
         self.new_window = FreeWindow()
@@ -74,3 +78,9 @@ class FreeWindow(QMainWindow, Ui_FreeWindow):
         self.new_window = MainWindow()
         self.new_window.show()
         self.close()
+
+class DialogWindow(QDialog, Ui_Dialog):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.setupUi(self)
+
