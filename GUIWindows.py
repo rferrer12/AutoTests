@@ -1,4 +1,4 @@
-from PyQt6.QtWidgets import QApplication, QWidget, QMainWindow, QDialog, QPushButton, QDialogButtonBox, QMessageBox
+from PyQt6.QtWidgets import QApplication, QWidget, QMainWindow, QDialog, QPushButton, QDialogButtonBox, QMessageBox, QFileDialog
 from PyQt6.QtCore import QThread, QEvent, Qt, pyqtSignal
 from PyQt6 import uic
 from zaber_motion import Units
@@ -23,7 +23,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.setWindowTitle("Home Window")
         self.pushButton.pressed.connect(self.home_all_axes)
         self.pushButton_2.pressed.connect(lambda: self.open_free_move("Free Move"))
-        self.pushButton_3.pressed.connect(lambda: self.open_free_move("Test 1"))
+        self.pushButton_3.pressed.connect(lambda: self.open_test_window("Test 1"))
         self.pushButton_4.pressed.connect(lambda: self.open_test_window("Test 2"))
         self.pushButton_5.pressed.connect(lambda: self.open_test_window("Test 3"))
         self.pushButton_6.pressed.connect(lambda: self.open_test_window("Test 4"))
@@ -49,10 +49,10 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             self.close()
 
     def open_test_window(self, name):
+        self.close()
         self.new_window = TestWindow()
         self.new_window.setWindowTitle(name)
         self.new_window.show()
-        self.close()
 
 class TestWindow(QMainWindow, Ui_TestWindow):
     def __init__(self, *args, **kwargs):
