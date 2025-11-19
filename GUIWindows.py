@@ -79,6 +79,8 @@ class FreeWindow(QMainWindow, Ui_FreeWindow):
         self.minPos1Label.setText(str(controller.stage.axes[0]["limits"][0]))
         self.maxPos1Label.setText(str(controller.stage.axes[0]["limits"][1]))
         self.axis1Slider.setRange(controller.stage.axes[0]["limits"][0], controller.stage.axes[0]["limits"][1])
+        stop_button = self.stopButton
+        stop_button.pressed.connect(lambda: controller.stage_stop())
         if len(controller.stage.axes) == 2:
             self.minPos2Label.setText(str(controller.stage.axes[0]["limits"][0]))
             self.maxPos2Label.setText(str(controller.stage.axes[0]["limits"][1]))
@@ -90,13 +92,16 @@ class FreeWindow(QMainWindow, Ui_FreeWindow):
             self.setPos2Button.setEnabled(False)
             self.pos2lineEdit.setText(str("NA"))
             self.pos2lineEdit.setEnabled(False)
-        self.axis1Slider.sliderReleased.connect(lambda: controller.stage_move_to([float(self.axis1Slider.value())], [0.0]))
+        self.axis1Slider.sliderReleased.connect(lambda: self.move_to_pos([float(self.axis1Slider.value())], [10.0]))
         self.axis1Slider.sliderMoved.connect(lambda: self.pos1lineEdit.setText(str(self.axis1Slider.value())))
 
     def open_main_window(self):
         self.new_window = MainWindow()
         self.new_window.show()
         self.close()
+
+    def move_to_pos(self, pos: list[float], vel: list[float]):
+        controller.stage_move_to(pos, vel)
 
 class DialogWindow(QDialog, Ui_Dialog):
     def __init__(self, *args, **kwargs):

@@ -12,8 +12,10 @@ class StageController(QObject):
         self.stage = XYStage(SERIAL_PORT)
         self.thread = None
         self.worker = None
+        self.posTarget: list[float]
+        self.velTarget: list[float]
 
-    def _start_worker(self, command, *args):
+    def start_worker(self, command, *args):
         if self.thread and self.thread.isRunning():
             print("Worker already running")
             return
@@ -21,19 +23,19 @@ class StageController(QObject):
         self.worker = MotionWorker(self.stage, command, *args)
         self.worker.moveToThread(self.thread)
         self.thread.started.connect(self.worker.move_command)
-        self.worker.finished_state.connect(self._clear_thread)
+        self.worker.finished_state.connect(self.clear_thread)
         self.thread.start()
 
     def stage_home(self):
-        self._start_worker("stage_home")
+        self.start_worker("stage_home")
 
     def stage_stop(self):
         if self.worker:
             print("Stopping worker")
             self.worker.stop()
 
-    def stage_move_to(self, pos: list[float], vel: list[float]):
-        self._start_worker("stage_move_to", pos, vel)
+    def stage_move_to(self, pos, vel):
+        self.start_worker("stage_move_to", pos, vel)
 
     def stage_is_moving(self):
         if self.stage.connection.is_busy():
@@ -41,7 +43,7 @@ class StageController(QObject):
         else:
             return False
 
-    def _clear_thread(self):
+    def clear_thread(self):
         self.thread.quit()
         self.thread.wait()
         self.thread = None
@@ -59,18 +61,18 @@ class MotionWorker(QObject):
         self.stop_requested = False
 
     def move_command(self):
+        pos, vel = self.args
         try:
             if self.command == "stage_move_to":
-                self.stage.targetPos = pos
-                self._run_move_command(lambda: self.stage.move_to())
+                self.run_move_command(lambda: self.stage.move_to(pos, vel))
             elif self.command == "stage_home":
-                self._run_move_command(lambda: self.stage.home_all_axes())
+                self.run_move_command(lambda: self.stage.home_all_axes())
         except Exception as e:
             self.error_state.emit(str(e))
         finally:
             self.finished_state.emit()
 
-    def _run_move_command(self, func):
+    def run_move_command(self, func):
         for axis in self.stage.axes:
             if self.stop_requested:
                 self.stage.stop_move()
@@ -78,5 +80,5 @@ class MotionWorker(QObject):
             func()
 
     def stop(self):
-        self._stop_requested = True
+        self.stop_requested = True
         self.stage.stop_move()

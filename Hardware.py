@@ -22,7 +22,7 @@ class XYStage:
     units = None
     def __init__(self, connection_port: str):
         #self.connection = Connection.open_serial_port(connection_port)
-        self.connection = Connection.open_iot("1e4b4cb8-c947-45a8-9cca-21eb0b34b911")
+        self.connection = Connection.open_iot("6246eaef-8c1a-4612-b1f3-de77d610f42d")
         self.device_list = self.connection.detect_devices()
         print("Found {} devices".format(len(self.device_list)))
         self.axes = {}
@@ -54,16 +54,17 @@ class XYStage:
         return limit_min, limit_max
 
     def move_to(self, abs_pos: list[float], move_vel: list[float]):
-        for i in range(2):
+        for i in self.axes:
             if abs_pos[i] > self.axes[i]["limits"][1]:
                 pos = self.axes[i]["limits"][1]
             elif abs_pos[i] < self.axes[i]["limits"][0]:
                 pos = self.axes[i]["limits"][0]
             else:
                 pos = abs_pos[i]
+            vel = move_vel[i]
             axis = self.axes[i].get("axis")
             print("Moving axis {} to position {}".format(axis, pos))
-            axis.move_absolute(pos, unit = Units.LENGTH_MILLIMETRES, velocity = move_vel)
+            axis.move_absolute(pos, unit = Units.LENGTH_MILLIMETRES)
 
     def stop_move(self):
         for i in self.axes:
