@@ -10,17 +10,14 @@ class StageController(QObject):
     def __init__(self):
         super().__init__()
         self.stage = XYStage(SERIAL_PORT)
-        self.thread = None
-        self.worker = None
-        self.posTarget: list[float]
-        self.velTarget: list[float]
+        self.axes = self.stage.axes
 
     def start_worker(self, command, *args):
         if self.thread and self.thread.isRunning():
             print("Worker already running")
             return
         self.thread = QThread()
-        self.worker = MotionWorker(self.stage, command, *args)
+        self.worker = AxisWorker(self.stage, command, *args)
         self.worker.moveToThread(self.thread)
         self.thread.started.connect(self.worker.move_command)
         self.worker.finished_state.connect(self.clear_thread)
@@ -49,20 +46,21 @@ class StageController(QObject):
         self.thread = None
         self.worker = None
 
-class MotionWorker(QObject):
+class AxisWorker(QObject):
     error_state = pyqtSignal(str)
+    busy_state = pyqtSignal(bool)
     finished_state = pyqtSignal()
 
     def __init__(self, stage, command, *args):
         super().__init__()
-        self.stage = stage
-        self.command = command
+        self.axis  = stage
         self.args = args
         self.stop_requested = False
 
-    def move_command(self):
+    def move_to(self):
         pos, vel = self.args
         try:
+            self.busy_state.emit(True)
             if self.command == "stage_move_to":
                 self.run_move_command(lambda: self.stage.move_to(pos, vel))
             elif self.command == "stage_home":
