@@ -16,12 +16,23 @@ import Controller
 #from .ui import MainWindow
 controller = StageController()
 
+
+def home_all_axes():
+    dlg = DialogWindow()
+    dlg.textBrowser.setText("Please ensure that the tool will not collide with the workpiece or other materials.")
+    if dlg.exec():
+        controller.stage_home_all()
+        print("Home all axes accepted")
+    else:
+        print("Home all axes rejected")
+
+
 class MainWindow(QMainWindow, Ui_MainWindow):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.setupUi(self)
         self.setWindowTitle("Home Window")
-        self.pushButton.pressed.connect(self.home_all_axes)
+        self.pushButton.pressed.connect(home_all_axes)
         self.pushButton_2.pressed.connect(lambda: self.open_free_move("Free Move"))
         self.pushButton_3.pressed.connect(lambda: self.open_test_window("Test 1"))
         self.pushButton_4.pressed.connect(lambda: self.open_test_window("Test 2"))
@@ -29,15 +40,6 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.pushButton_6.pressed.connect(lambda: self.open_test_window("Test 4"))
         self.pushButton_7.pressed.connect(lambda: controller.stage_stop())
         self.new_window = None
-
-    def home_all_axes(self):
-        dlg = DialogWindow()
-        dlg.textBrowser.setText("Please ensure that the tool will not collide with the workpiece or other materials.")
-        if dlg.exec():
-            controller.stage_home()
-            print("Home all axes accepted")
-        else:
-            print("Home all axes rejected")
 
     def open_free_move(self, name):
         dlg = DialogWindow()
@@ -81,7 +83,7 @@ class FreeWindow(QMainWindow, Ui_FreeWindow):
         self.axis1Slider.setRange(controller.stage.axes[0]["limits"][0], controller.stage.axes[0]["limits"][1])
         stop_button = self.stopButton
         stop_button.pressed.connect(lambda: controller.stage_stop())
-        if len(controller.stage.axes) == 2:
+        if len(controller.stage.axes) > 1:
             self.minPos2Label.setText(str(controller.stage.axes[0]["limits"][0]))
             self.maxPos2Label.setText(str(controller.stage.axes[0]["limits"][1]))
             self.axis2Slider.setRange(controller.stage.axes[1]["limits"][0], controller.stage.axes[1]["limits"][1])
@@ -92,16 +94,18 @@ class FreeWindow(QMainWindow, Ui_FreeWindow):
             self.setPos2Button.setEnabled(False)
             self.pos2lineEdit.setText(str("NA"))
             self.pos2lineEdit.setEnabled(False)
-        self.axis1Slider.sliderReleased.connect(lambda: self.move_to_pos([float(self.axis1Slider.value())], [10.0]))
+        self.axis1Slider.sliderReleased.connect(lambda: self.move_to_pos(0, float(self.axis1Slider.value()), float(10.0)))
         self.axis1Slider.sliderMoved.connect(lambda: self.pos1lineEdit.setText(str(self.axis1Slider.value())))
+        self.axis2Slider.sliderReleased.connect(lambda: self.move_to_pos(1, float(self.axis2Slider.value()), float(10.0)))
+        self.axis2Slider.sliderMoved.connect(lambda: self.pos2lineEdit.setText(str(self.axis2Slider.value())))
 
     def open_main_window(self):
         self.new_window = MainWindow()
         self.new_window.show()
         self.close()
 
-    def move_to_pos(self, pos: list[float], vel: list[float]):
-        controller.stage_move_to(pos, vel)
+    def move_to_pos(self, axis: int, pos: float, vel: float):
+        controller.stage_move_to(axis, pos, vel)
 
 class DialogWindow(QDialog, Ui_Dialog):
     def __init__(self, *args, **kwargs):
