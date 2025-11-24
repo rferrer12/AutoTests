@@ -1,4 +1,4 @@
-from PyQt6.QtCore import QObject, pyqtSignal, QThread
+from PyQt6.QtCore import QObject, pyqtSignal, QThread, QMetaObject, Qt, Q_ARG, pyqtSlot
 from Constants import SERIAL_PORT
 from Hardware import XYStage
 
@@ -10,73 +10,49 @@ class StageController(QObject):
     def __init__(self):
         super().__init__()
         self.stage = XYStage(SERIAL_PORT)
-        self.axes = self.stage.axes
+        self.axes_threads = []
+        self.axes_workers = []
+        for axis in self.stage.axes:
+            thread = QThread()
+            worker = AxisWorker(self.stage)
+            worker.moveToThread(thread)
+            thread.start()
+            self.axes_threads.append(thread)
+            self.axes_workers.append(worker)
 
-    def start_worker(self, command, *args):
-        if self.thread and self.thread.isRunning():
-            print("Worker already running")
-            return
-        self.thread = QThread()
-        self.worker = AxisWorker(self.stage, command, *args)
-        self.worker.moveToThread(self.thread)
-        self.thread.started.connect(self.worker.move_command)
-        self.worker.finished_state.connect(self.clear_thread)
-        self.thread.start()
-
-    def stage_home(self):
-        self.start_worker("stage_home")
+    def stage_home_all(self):
+        self.stage.home_all_axes()
 
     def stage_stop(self):
-        if self.worker:
+        for worker in self.axes_workers:
             print("Stopping worker")
-            self.worker.stop()
+            worker.stop()
+        self.stage.stop_move()
 
-    def stage_move_to(self, pos, vel):
-        self.start_worker("stage_move_to", pos, vel)
-
-    def stage_is_moving(self):
-        if self.stage.connection.is_busy():
-            return True
-        else:
-            return False
-
-    def clear_thread(self):
-        self.thread.quit()
-        self.thread.wait()
-        self.thread = None
-        self.worker = None
+    def stage_move_to(self, axis, pos, vel):
+        QMetaObject.invokeMethod(self.axes_workers[axis], "move_to", Qt.ConnectionType.QueuedConnection,
+                                 Q_ARG(int, axis), Q_ARG(float, pos), Q_ARG(float, vel))
 
 class AxisWorker(QObject):
     error_state = pyqtSignal(str)
     busy_state = pyqtSignal(bool)
     finished_state = pyqtSignal()
 
-    def __init__(self, stage, command, *args):
+    def __init__(self, stage, *args):
         super().__init__()
-        self.axis  = stage
-        self.args = args
         self.stop_requested = False
+        self.stage = stage
 
-    def move_to(self):
-        pos, vel = self.args
+    @pyqtSlot(int, float, float)
+    def move_to(self, axis: int, pos: float, vel: float):
         try:
             self.busy_state.emit(True)
-            if self.command == "stage_move_to":
-                self.run_move_command(lambda: self.stage.move_to(pos, vel))
-            elif self.command == "stage_home":
-                self.run_move_command(lambda: self.stage.home_all_axes())
+            self.stage.move_to(axis, pos, vel)
         except Exception as e:
             self.error_state.emit(str(e))
         finally:
             self.finished_state.emit()
-
-    def run_move_command(self, func):
-        for axis in self.stage.axes:
-            if self.stop_requested:
-                self.stage.stop_move()
-                return
-            func()
+            self.busy_state.emit(False)
 
     def stop(self):
         self.stop_requested = True
-        self.stage.stop_move()
