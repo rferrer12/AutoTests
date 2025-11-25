@@ -79,12 +79,20 @@ class FreeWindow(QMainWindow, Ui_FreeWindow):
         self.minPos1Label.setText(str(controller.stage.axes[0]["limits"][0]))
         self.maxPos1Label.setText(str(controller.stage.axes[0]["limits"][1]))
         self.axis1Slider.setRange(controller.stage.axes[0]["limits"][0], controller.stage.axes[0]["limits"][1])
+        self.axis1Slider.sliderReleased.connect(lambda: self.move_to_pos([float(self.axis1Slider.value())], [10.0]))
+        self.axis1Slider.valueChanged.connect(lambda: self.pos1lineEdit.setText(str(self.axis1Slider.value())))
+        self.axis1Slider.sliderPressed.connect(lambda: self.pos1lineEdit.setText(str(self.axis1Slider.value())))
+        self.axis1Slider.setValue(controller.stage.axes[0]["axis"].get_position(unit = Units.LENGTH_MILLIMETRES))
         stop_button = self.stopButton
         stop_button.pressed.connect(lambda: controller.stage_stop())
+        stop_button.pressed.connect(lambda: self.axis1Slider.setValue(controller.stage.axes[0]["axis"].get_position(unit = Units.LENGTH_MILLIMETRES)))
         if len(controller.stage.axes) == 2:
-            self.minPos2Label.setText(str(controller.stage.axes[0]["limits"][0]))
-            self.maxPos2Label.setText(str(controller.stage.axes[0]["limits"][1]))
+            self.minPos2Label.setText(str(controller.stage.axes[1]["limits"][0]))
+            self.maxPos2Label.setText(str(controller.stage.axes[1]["limits"][1]))
             self.axis2Slider.setRange(controller.stage.axes[1]["limits"][0], controller.stage.axes[1]["limits"][1])
+            self.axis2Slider.sliderReleased.connect(lambda: self.move_to_pos([float(self.axis1Slider.value())], [10.0]))
+            self.axis2Slider.valueChanged.connect(lambda: self.pos1lineEdit.setText(str(self.axis1Slider.value())))
+            self.axis2Slider.sliderPressed.connect(lambda: self.pos1lineEdit.setText(str(self.axis1Slider.value())))
         else:
             self.minPos2Label.setText(str("NA"))
             self.maxPos2Label.setText(str("NA"))
@@ -92,8 +100,8 @@ class FreeWindow(QMainWindow, Ui_FreeWindow):
             self.setPos2Button.setEnabled(False)
             self.pos2lineEdit.setText(str("NA"))
             self.pos2lineEdit.setEnabled(False)
-        self.axis1Slider.sliderReleased.connect(lambda: self.move_to_pos([float(self.axis1Slider.value())], [10.0]))
-        self.axis1Slider.sliderMoved.connect(lambda: self.pos1lineEdit.setText(str(self.axis1Slider.value())))
+        controller.movement_started.connect(self.on_movement_started)
+        controller.movement_finished.connect(self.on_movement_finished)
 
     def open_main_window(self):
         self.new_window = MainWindow()
@@ -102,6 +110,14 @@ class FreeWindow(QMainWindow, Ui_FreeWindow):
 
     def move_to_pos(self, pos: list[float], vel: list[float]):
         controller.stage_move_to(pos, vel)
+
+    def on_movement_started(self):
+        self.axis1Slider.setEnabled(False)
+        self.setPos1Button.setEnabled(False)
+
+    def on_movement_finished(self):
+        self.axis1Slider.setEnabled(True)
+        self.setPos1Button.setEnabled(True)
 
 class DialogWindow(QDialog, Ui_Dialog):
     def __init__(self, *args, **kwargs):

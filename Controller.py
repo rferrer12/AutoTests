@@ -5,7 +5,8 @@ from Hardware import XYStage
 
 class StageController(QObject):
     status = pyqtSignal(str)
-    busy_state = pyqtSignal(bool)
+    movement_started = pyqtSignal()
+    movement_finished = pyqtSignal()
 
     def __init__(self):
         super().__init__()
@@ -19,11 +20,13 @@ class StageController(QObject):
         if self.thread and self.thread.isRunning():
             print("Worker already running")
             return
+        self.movement_started.emit()
         self.thread = QThread()
         self.worker = MotionWorker(self.stage, command, *args)
         self.worker.moveToThread(self.thread)
         self.thread.started.connect(self.worker.move_command)
         self.worker.finished_state.connect(self.clear_thread)
+        self.worker.finished_state.connect(self.movement_finished.emit)
         self.thread.start()
 
     def stage_home(self):
@@ -38,7 +41,7 @@ class StageController(QObject):
         self.start_worker("stage_move_to", pos, vel)
 
     def stage_is_moving(self):
-        if self.stage.connection.is_busy():
+        if self.stage.axes[0].get("axis").is_busy():
             return True
         else:
             return False
@@ -61,9 +64,9 @@ class MotionWorker(QObject):
         self.stop_requested = False
 
     def move_command(self):
-        pos, vel = self.args
         try:
             if self.command == "stage_move_to":
+                pos, vel = self.args
                 self.run_move_command(lambda: self.stage.move_to(pos, vel))
             elif self.command == "stage_home":
                 self.run_move_command(lambda: self.stage.home_all_axes())
