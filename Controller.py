@@ -5,7 +5,8 @@ from Hardware import XYStage
 
 class StageController(QObject):
     status = pyqtSignal(str)
-    busy_state = pyqtSignal(bool)
+    movement_started = pyqtSignal()
+    movement_finished = pyqtSignal()
 
     def __init__(self):
         super().__init__()
