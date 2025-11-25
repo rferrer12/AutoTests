@@ -36,7 +36,7 @@ class StageController(QObject):
 
 class AxisWorker(QObject):
     error_state = pyqtSignal(str)
-    busy_state = pyqtSignal(bool)
+    busy_state = pyqtSignal()
     finished_state = pyqtSignal()
 
     def __init__(self, stage, *args):
@@ -47,13 +47,13 @@ class AxisWorker(QObject):
     @pyqtSlot(int, float, float)
     def move_to(self, axis: int, pos: float, vel: float):
         try:
-            self.busy_state.emit(True)
+            self.busy_state.emit()
             self.stage.move_to(axis, pos, vel)
         except Exception as e:
             self.error_state.emit(str(e))
         finally:
             self.finished_state.emit()
-            self.busy_state.emit(False)
 
     def stop(self):
         self.stop_requested = True
+        self.finished_state.emit()

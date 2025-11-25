@@ -82,8 +82,13 @@ class FreeWindow(QMainWindow, Ui_FreeWindow):
         self.axis1Slider.setRange(controller.stage.axes[0]["limits"][0], controller.stage.axes[0]["limits"][1])
         self.axis1Slider.valueChanged.connect(lambda: self.pos1lineEdit.setText(str(self.axis1Slider.value())))
         self.axis1Slider.setValue(controller.stage.axes[0]["axis"].get_position(unit = Units.LENGTH_MILLIMETRES))
+        self.axis1Slider.sliderReleased.connect(
+            lambda: self.move_to_pos(0, float(self.axis1Slider.value()), float(10.0)))
+        controller.axes_workers[0].busy_state.connect(lambda axis=0: self.on_busy_state(axis))
+        controller.axes_workers[0].finished_state.connect(lambda axis=0: self.on_finished_state(axis))
         stop_button = self.stopButton
         stop_button.pressed.connect(lambda: controller.stage_stop())
+        stop_button.pressed.connect(lambda: self.axis1Slider.setValue(controller.stage.axes[0]["axis"].get_position(unit = Units.LENGTH_MILLIMETRES)))
         if len(controller.stage.axes) > 1:
             self.minPos2Label.setText(str(controller.stage.axes[0]["limits"][0]))
             self.maxPos2Label.setText(str(controller.stage.axes[0]["limits"][1]))
@@ -108,13 +113,25 @@ class FreeWindow(QMainWindow, Ui_FreeWindow):
     def move_to_pos(self, axis: int, pos: float, vel: float):
         controller.stage_move_to(axis, pos, vel)
 
-    def on_movement_started(self):
-        self.axis1Slider.setEnabled(False)
-        self.setPos1Button.setEnabled(False)
+    def on_busy_state(self, axis: int):
+        if axis == 0:
+            self.axis1Slider.setEnabled(False)
+            self.setPos1Button.setEnabled(False)
+            self.setVel1Button.setEnabled(False)
+        elif axis == 1:
+            self.axis2Slider.setEnabled(False)
+            self.setPos2Button.setEnabled(False)
+            self.setVel2Button.setEnabled(False)
 
-    def on_movement_finished(self):
-        self.axis1Slider.setEnabled(True)
-        self.setPos1Button.setEnabled(True)
+    def on_finished_state(self, axis: int):
+        if axis == 0:
+            self.axis1Slider.setEnabled(True)
+            self.setPos1Button.setEnabled(True)
+            self.setVel1Button.setEnabled(True)
+        elif axis == 1:
+            self.axis2Slider.setEnabled(True)
+            self.setPos2Button.setEnabled(True)
+            self.setVel2Button.setEnabled(True)
 
 class DialogWindow(QDialog, Ui_Dialog):
     def __init__(self, *args, **kwargs):
