@@ -22,7 +22,7 @@ class XYStage:
     units = None
     def __init__(self, connection_port: str):
         #self.connection = Connection.open_serial_port(connection_port)
-        self.connection = Connection.open_iot("b248f07f-7eda-49ab-95ce-ad42b1528be1")
+        self.connection = Connection.open_iot("2a343b1e-aaf5-4708-b50c-e2c62b5da5cb")
         self.device_list = self.connection.detect_devices()
         print("Found {} devices".format(len(self.device_list)))
         self.axes = {}

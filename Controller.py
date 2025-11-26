@@ -46,6 +46,9 @@ class AxisWorker(QObject):
 
     @pyqtSlot(int, float, float)
     def move_to(self, axis: int, pos: float, vel: float):
+        if self.stop_requested:
+            self.stop_requested = False
+            return
         try:
             self.busy_state.emit()
             self.stage.move_to(axis, pos, vel)

@@ -2,6 +2,7 @@ from PyQt6.QtWidgets import QApplication, QWidget, QMainWindow, QDialog, QPushBu
 from PyQt6.QtCore import QThread, QEvent, Qt, pyqtSignal
 from PyQt6 import uic
 from zaber_motion import Units
+import pandas as pd
 
 import sys
 
@@ -60,14 +61,28 @@ class TestWindow(QMainWindow, Ui_TestWindow):
     def __init__(self, main, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.setupUi(self)
-        home_button = self.pushButton
-        home_button.setCheckable(True)
+        home_button = self.homeButton
         home_button.pressed.connect(self.open_main_window)
         self.main_window = main
+        self.fileButton.pressed.connect(lambda: self.launch_file_dialog())
 
     def open_main_window(self):
         self.main_window.show()
         self.close()
+
+    def launch_file_dialog(self):
+        file_filter = 'Data File (*.xlsx *.csv *.dat);; Excel File (*.xlsx *.xls)'
+        file, _ = QFileDialog().getOpenFileName(filter=file_filter)
+        if file:
+            try:
+                df = pd.read_excel(file)
+                self.fileName.setText(file)
+                self.testNumberEdit.setText(str(df.iloc[0,10]))
+                self.testLabelEdit.setText(str(df.iloc[0,0]))
+            except Exception as e:
+                print(e)
+        else:
+            print("No file selected")
 
 class FreeWindow(QMainWindow, Ui_FreeWindow):
     def __init__(self, main, *args, **kwargs):
